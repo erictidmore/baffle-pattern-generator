@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baffle Pattern Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f2ee; color: #1a1a18; min-height: 100vh; padding: 1.5rem; }
+  h1 { font-size: 16px; font-weight: 500; margin-bottom: 1rem; color: #1a1a18; letter-spacing: -0.01em; }
+  .canvas-box { border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); }
+  canvas { display: block; width: 100%; }
+  .section-label { font-size: 11px; color: #888; margin: 1rem 0 5px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .pill-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill { font-size: 12px; padding: 5px 13px; border-radius: 20px; border: 1px solid #d0ccc8; background: #fff; color: #555; cursor: pointer; transition: all .12s; white-space: nowrap; user-select: none; }
+  .pill:hover { border-color: #aaa; color: #222; }
+  .pill.on { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: .6rem; }
+  .ctrl { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 130px; overflow: hidden; }
+  .ctrl label { font-size: 12px; color: #888; white-space: nowrap; flex-shrink: 0; }
+  .ctrl span { font-size: 12px; font-weight: 500; color: #1a1a18; min-width: 24px; }
+  input[type=range] { flex: 1; accent-color: #1a1a18; cursor: pointer; }
+  input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #1a1a18; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+  .sw { height: 34px; flex: 1; min-width: 52px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: transform .12s; display: flex; align-items: flex-end; padding: 3px 5px; }
+  .sw:hover { transform: scale(1.06); }
+  .sw.on { border-color: #1a1a18; }
+  .sw span { font-size: 10px; color: rgba(255,255,255,0.88); font-weight: 500; }
+  .btn-row { display: flex; gap: 8px; margin-top: .85rem; flex-wrap: wrap; }
+  .btn { font-size: 13px; padding: 7px 16px; border-radius: 8px; border: 1px solid #d0ccc8; background: #fff; color: #1a1a18; cursor: pointer; transition: all .12s; }
+  .btn:hover { background: #f0ece8; }
+  .btn.primary { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+  .btn.primary:hover { background: #333; }
+  .card { background: #fff; border-radius: 12px; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.08); margin-top: 1rem; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0e0e0c; color: #e8e4dc; }
+    h1 { color: #e8e4dc; }
+    .pill { background: #1c1c1a; border-color: #383830; color: #a0a098; }
+    .pill:hover { border-color: #666; color: #e8e4dc; }
+    .pill.on { background: #e8e4dc; color: #1a1a18; border-color: #e8e4dc; }
+    .ctrl label { color: #888; }
+    .ctrl span { color: #e8e4dc; }
+    .sw.on { border-color: #e8e4dc; }
+    .btn { background: #1c1c1a; border-color: #383830; color: #e8e4dc; }
+    .btn:hover { background: #282826; }
+    .btn.primary { background: #e8e4dc; color: #1a1a18; border-color: #e8e4dc; }
+    .btn.primary:hover { background: #ccc8c0; }
+    .card { background: #141412; border-color: rgba(255,255,255,0.07); }
+    .section-label { color: #666; }
+    .canvas-box { border-color: rgba(255,255,255,0.1); }
+  }
+  @media (max-width: 768px) {
+    body { padding: 1rem; }
+    h1 { font-size: 14px; margin-bottom: 0.75rem; }
+    .card { padding: 0.85rem; }
+    .pill { font-size: 11px; padding: 4px 11px; }
+    .btn { font-size: 12px; padding: 6px 13px; }
+    .canvas-box { border-radius: 8px; }
+  }
+  @media (max-width: 480px) {
+    body { padding: 0.65rem; }
+    h1 { font-size: 13px; margin-bottom: 0.6rem; }
+    .card { padding: 0.65rem; border-radius: 10px; }
+    .pill { font-size: 10px; padding: 3px 9px; }
+    .section-label { font-size: 10px; margin: 0.7rem 0 4px; }
+    .btn { font-size: 11px; padding: 5px 11px; }
+    .sw { min-width: 40px; height: 28px; }
+    .sw span { font-size: 9px; }
+    .canvas-box { border-radius: 6px; }
+    .btn-row { gap: 6px; margin-top: .65rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Baffle pattern generator</h1>
+
+<div class="canvas-box">
+  <canvas id="c" height="480"></canvas>
+</div>
+
+<div class="card">
+  <p class="section-label">Pattern mode</p>
+  <div class="pill-row" id="modes">
+    <div class="pill on" data-mode="scatter">Random scatter</div>
+    <div class="pill" data-mode="grid">Grid repeat</div>
+    <div class="pill" data-mode="radial">Radial rosette</div>
+    <div class="pill" data-mode="flow">Flowing rows</div>
+    <div class="pill" data-mode="wave">Wave</div>
+    <div class="pill" data-mode="spiral">Spiral</div>
+    <div class="pill" data-mode="diagonal">Diagonal</div>
+  </div>
+
+  <p class="section-label" style="margin-top:1rem">Leaf shape</p>
+  <div class="pill-row" id="shapes">
+    <div class="pill on" data-shape="palm">Palm</div>
+    <div class="pill" data-shape="banana">Banana</div>
+    <div class="pill" data-shape="monstera">Monstera</div>
+    <div class="pill" data-shape="needle">Needle</div>
+    <div class="pill" data-shape="oak">Oak</div>
+    <div class="pill" data-shape="maple">Maple</div>
+    <div class="pill" data-shape="fern">Fern</div>
+    <div class="pill" data-shape="willow">Willow</div>
+    <div class="pill" data-shape="aloe">Aloe</div>
+    <div class="pill" data-shape="hemp">Hemp</div>
+    <div class="pill" data-shape="arrow">Arrow</div>
+    <div class="pill" data-shape="circle">Circle</div>
+    <div class="pill" data-shape="diamond">Diamond</div>
+    <div class="pill" data-shape="triangle">Triangle</div>
+    <div class="pill" data-shape="hexagon">Hexagon</div>
+  </div>
+
+  <p class="section-label" style="margin-top:1rem">Panel frame</p>
+  <div class="pill-row" id="frames">
+    <div class="pill on" data-frame="none">None</div>
+    <div class="pill" data-frame="thin">Thin border</div>
+    <div class="pill" data-frame="inset">Inset groove</div>
+    <div class="pill" data-frame="double">Double rule</div>
+  </div>
+
+  <div class="row" style="margin-top:1rem">
+    <div class="ctrl">
+      <label>Columns</label>
+      <input type="range" id="cols" min="2" max="8" value="4" step="1">
+      <span id="colsV">4</span>
+    </div>
+    <div class="ctrl">
+      <label>Rows</label>
+      <input type="range" id="rows" min="1" max="6" value="3" step="1">
+      <span id="rowsV">3</span>
+    </div>
+    <div class="ctrl">
+      <label>Leaf size</label>
+      <input type="range" id="sz" min="15" max="90" value="52" step="1">
+      <span id="szV">52</span>
+    </div>
+    <div class="ctrl">
+      <label>Leaves</label>
+      <input type="range" id="lcount" min="2" max="4" value="3" step="1">
+      <span id="lcountV">3</span>
+    </div>
+    <div class="ctrl">
+      <label>Gap</label>
+      <input type="range" id="gap" min="2" max="32" value="10" step="1">
+      <span id="gapV">10</span>
+    </div>
+    <div class="ctrl">
+      <label>Offset rows</label>
+      <input type="checkbox" id="offset">
+    </div>
+  </div>
+
+  <p class="section-label" style="margin-top:1rem">Palette</p>
+  <div class="swatches" id="sw"></div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="randomize()">Randomize ↺</button>
+    <button class="btn primary" onclick="exportPNG()">Export PNG ↓</button>
+    <button class="btn primary" onclick="exportSVGFile()">Export SVG ↓</button>
+  </div>
+</div>
+
+<script>
+const PALETTES = [
+  { name:"Sage",      bg:"#dde0d8", fg:"#3a5040" },
+  { name:"Onyx",      bg:"#1c1c1a", fg:"#c8c4b8" },
+  { name:"Clay",      bg:"#e4d4c0", fg:"#5a3420" },
+  { name:"Slate",     bg:"#ccd0d4", fg:"#28363e" },
+  { name:"Ochre",     bg:"#eedea0", fg:"#6a4010" },
+  { name:"Ash",       bg:"#eeece8", fg:"#302e2c" },
+  { name:"Ink",       bg:"#16202e", fg:"#8aaabb" },
+  { name:"Rust",      bg:"#e8d8cc", fg:"#7a3020" },
+  { name:"Dusk",      bg:"#2a2038", fg:"#c8a8d8" },
+  { name:"Fern",      bg:"#e0e8d8", fg:"#2a4030" },
+  { name:"Sand",      bg:"#f0e8d8", fg:"#786040" },
+  { name:"Charcoal",  bg:"#d8d4ce", fg:"#282420" },
+  { name:"Teal",      bg:"#d0e4e0", fg:"#1a4040" },
+  { name:"Terracotta",bg:"#e8cfc0", fg:"#602818" },
+  { name:"Stone",     bg:"#e4e0d8", fg:"#504840" },
+  { name:"Midnight",  bg:"#0e1420", fg:"#a0b8c8" },
+];
+
+let pal = 0, mode = 'scatter', shape = 'palm', frame = 'none';
+let animT = 0, scatterSeeds = [];
+
+const cvs = document.getElementById('c');
+const ctx = cvs.getContext('2d');
+
+function resize() { cvs.width = cvs.offsetWidth; cvs.height = Math.round(cvs.width * 0.55); }
+resize();
+window.addEventListener('resize', () => { resize(); rebuildSeeds(); });
+
+function gv(id) { return parseFloat(document.getElementById(id).value); }
+['cols','rows','sz','lcount','gap'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    document.getElementById(id+'V').textContent = document.getElementById(id).value;
+    rebuildSeeds();
+  });
+});
+
+function pillGroup(groupId, key, setter) {
+  document.getElementById(groupId).querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(groupId).querySelectorAll('.pill').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      setter(btn.dataset[key]);
+      if (key === 'mode') rebuildSeeds();
+    });
+  });
+}
+pillGroup('modes', 'mode', v => mode = v);
+pillGroup('shapes', 'shape', v => shape = v);
+pillGroup('frames', 'frame', v => frame = v);
+
+function buildSwatches() {
+  const c = document.getElementById('sw');
+  c.innerHTML = '';
+  PALETTES.forEach((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'sw' + (i === pal ? ' on' : '');
+    d.style.background = p.fg;
+    d.innerHTML = `<span>${p.name}</span>`;
+    d.onclick = () => { pal = i; buildSwatches(); };
+    c.appendChild(d);
+  });
+}
+buildSwatches();
+
+function seededRand(seed) {
+  let s = seed;
+  return () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+}
+
+function rebuildSeeds() {
+  const numCols = Math.round(gv('cols')), numRows = Math.round(gv('rows')), lcount = Math.round(gv('lcount'));
+  scatterSeeds = [];
+  for (let r = 0; r < numRows; r++) {
+    for (let c = 0; c < numCols; c++) {
+      const rand = seededRand((r * 97 + c) * 31337 + 42);
+      const leaves = [];
+      for (let l = 0; l < lcount; l++) {
+        leaves.push({ ox: (rand()-0.5)*0.52, oy: (rand()-0.5)*0.52, baseAngle: rand()*Math.PI*2, sizeScale: 0.7+rand()*0.55 });
+      }
+      scatterSeeds.push(leaves);
+    }
+  }
+}
+rebuildSeeds();
+
+function drawShape(c, cx, cy, size, angle, shapeType) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(angle);
+  const w = size * 0.36, h = size;
+  if (shapeType === 'palm') {
+    c.beginPath();
+    c.moveTo(0, h*0.2);
+    c.bezierCurveTo(-w*0.9, h*0.05, -w, -h*0.32, 0, -h*0.85);
+    c.bezierCurveTo(w, -h*0.32, w*0.9, h*0.05, 0, h*0.2);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'banana') {
+    const bw=size*0.48, bh=size;
+    c.beginPath();
+    c.moveTo(0, bh*0.22);
+    c.bezierCurveTo(-bw*0.6,bh*0.1,-bw*0.9,-bh*0.1,-bw*0.3,-bh*0.85);
+    c.bezierCurveTo(-bw*0.05,-bh*0.95,bw*0.15,-bh*0.9,bw*0.4,-bh*0.75);
+    c.bezierCurveTo(bw*0.85,-bh*0.1,bw*0.55,bh*0.1,0,bh*0.22);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'monstera') {
+    const mw=size*0.44, mh=size;
+    c.beginPath();
+    c.moveTo(0,mh*0.22);
+    c.bezierCurveTo(-mw,mh*0.05,-mw*1.1,-mh*0.3,-mw*0.5,-mh*0.85);
+    c.bezierCurveTo(-mw*0.1,-mh*0.98,mw*0.1,-mh*0.98,mw*0.5,-mh*0.85);
+    c.bezierCurveTo(mw*1.1,-mh*0.3,mw,mh*0.05,0,mh*0.22);
+    c.closePath(); c.fill();
+    const bg = PALETTES[pal].fg;
+    c.fillStyle = bg;
+    c.beginPath(); c.ellipse(-mw*0.48,-mh*0.35,mw*0.18,mh*0.12,-0.4,0,Math.PI*2); c.fill();
+    c.beginPath(); c.ellipse(mw*0.48,-mh*0.35,mw*0.18,mh*0.12,0.4,0,Math.PI*2); c.fill();
+    c.beginPath(); c.ellipse(0,-mh*0.62,mw*0.14,mh*0.09,0,0,Math.PI*2); c.fill();
+  } else if (shapeType === 'needle') {
+    const nw=size*0.14;
+    c.beginPath();
+    c.moveTo(0,h*0.2);
+    c.bezierCurveTo(-nw,h*0.1,-nw*0.8,-h*0.4,0,-h*0.92);
+    c.bezierCurveTo(nw*0.8,-h*0.4,nw,h*0.1,0,h*0.2);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'willow') {
+    const nw=size*0.25;
+    c.beginPath();
+    c.moveTo(0,h*0.2);
+    c.bezierCurveTo(-nw*0.5,h*0.05,-nw*0.6,-h*0.3,-nw*0.12,-h*0.92);
+    c.bezierCurveTo(-nw*0.04,-h*0.97,nw*0.04,-h*0.97,nw*0.12,-h*0.92);
+    c.bezierCurveTo(nw*0.6,-h*0.3,nw*0.5,h*0.05,0,h*0.2);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'oak') {
+    const ow=size*0.44;
+    c.beginPath();
+    c.moveTo(0,h*0.15);
+    c.bezierCurveTo(ow*0.7,h*0.05,ow*1.0,-h*0.1,ow*0.45,-h*0.25);
+    c.bezierCurveTo(ow*1.1,-h*0.25,ow*1.1,-h*0.5,ow*0.45,-h*0.55);
+    c.bezierCurveTo(ow*0.8,-h*0.65,ow*0.6,-h*0.85,0,-h*0.88);
+    c.bezierCurveTo(-ow*0.6,-h*0.85,-ow*0.8,-h*0.65,-ow*0.45,-h*0.55);
+    c.bezierCurveTo(-ow*1.1,-h*0.5,-ow*1.1,-h*0.25,-ow*0.45,-h*0.25);
+    c.bezierCurveTo(-ow*1.0,-h*0.1,-ow*0.7,h*0.05,0,h*0.15);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'maple') {
+    const mw=size*0.38;
+    c.beginPath();
+    c.moveTo(0,h*0.2);
+    c.bezierCurveTo(mw*0.3,0,mw*0.3,-h*0.1,mw*0.6,-h*0.15);
+    c.bezierCurveTo(mw*0.35,-h*0.2,mw*0.4,-h*0.3,mw*0.6,-h*0.4);
+    c.bezierCurveTo(mw*0.35,-h*0.42,mw*0.3,-h*0.52,mw*0.3,-h*0.6);
+    c.bezierCurveTo(mw*0.2,-h*0.75,mw*0.1,-h*0.88,0,-h*0.92);
+    c.bezierCurveTo(-mw*0.1,-h*0.88,-mw*0.2,-h*0.75,-mw*0.3,-h*0.6);
+    c.bezierCurveTo(-mw*0.3,-h*0.52,-mw*0.35,-h*0.42,-mw*0.6,-h*0.4);
+    c.bezierCurveTo(-mw*0.4,-h*0.3,-mw*0.35,-h*0.2,-mw*0.6,-h*0.15);
+    c.bezierCurveTo(-mw*0.3,-h*0.1,-mw*0.3,0,0,h*0.2);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'fern') {
+    const fw=size*0.28;
+    c.beginPath();
+    c.moveTo(0,h*0.2);
+    c.bezierCurveTo(-fw*0.15,h*0.05,-fw*0.1,-h*0.4,0,-h*0.92);
+    c.bezierCurveTo(fw*0.1,-h*0.4,fw*0.15,h*0.05,0,h*0.2);
+    c.closePath(); c.fill();
+    for (let i=0;i<5;i++) {
+      const frac=(i+0.5)/5;
+      const y=h*0.15-frac*h*0.95;
+      const lw=fw*(0.6+frac*0.6);
+      c.beginPath(); c.moveTo(0,y);
+      c.bezierCurveTo(-lw*0.4,y-h*0.05,-lw*0.85,y-h*0.03,-lw*0.9,y);
+      c.bezierCurveTo(-lw*0.85,y+h*0.03,-lw*0.4,y+h*0.05,0,y);
+      c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(0,y);
+      c.bezierCurveTo(lw*0.4,y-h*0.05,lw*0.85,y-h*0.03,lw*0.9,y);
+      c.bezierCurveTo(lw*0.85,y+h*0.03,lw*0.4,y+h*0.05,0,y);
+      c.closePath(); c.fill();
+    }
+  } else if (shapeType === 'aloe') {
+    const aw=size*0.32;
+    c.beginPath();
+    c.moveTo(0,h*0.2);
+    c.bezierCurveTo(-aw*0.9,h*0.08,-aw*0.7,-h*0.3,-aw*0.1,-h*0.92);
+    c.bezierCurveTo(-aw*0.03,-h*0.97,aw*0.03,-h*0.97,aw*0.1,-h*0.92);
+    c.bezierCurveTo(aw*0.7,-h*0.3,aw*0.9,h*0.08,0,h*0.2);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'hemp') {
+    const hw=size*0.44;
+    for (let i=0;i<5;i++) {
+      const ang=(i-2)*0.35;
+      c.save(); c.rotate(ang);
+      const lh2=h*0.45,lw2=hw*0.12;
+      c.beginPath();
+      c.moveTo(0,-h*0.3);
+      c.bezierCurveTo(-lw2,-h*0.32,-lw2*0.6,-h*0.5,0,-h*0.3-lh2);
+      c.bezierCurveTo(lw2*0.6,-h*0.5,lw2,-h*0.32,0,-h*0.3);
+      c.closePath(); c.fill();
+      c.restore();
+    }
+    c.beginPath();
+    c.moveTo(0,h*0.2);
+    c.bezierCurveTo(-hw*0.08,h*0.05,-hw*0.05,-h*0.1,0,-h*0.3);
+    c.bezierCurveTo(hw*0.05,-h*0.1,hw*0.08,h*0.05,0,h*0.2);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'arrow') {
+    const aw=size*0.44;
+    c.beginPath();
+    c.moveTo(0,h*0.22);
+    c.bezierCurveTo(-aw*0.8,h*0.08,-aw*0.9,-h*0.05,-aw*0.55,-h*0.15);
+    c.bezierCurveTo(-aw*0.3,-h*0.2,-aw*0.2,-h*0.25,-aw*0.12,-h*0.35);
+    c.bezierCurveTo(-aw*0.08,-h*0.6,-aw*0.04,-h*0.78,0,-h*0.9);
+    c.bezierCurveTo(aw*0.04,-h*0.78,aw*0.08,-h*0.6,aw*0.12,-h*0.35);
+    c.bezierCurveTo(aw*0.2,-h*0.25,aw*0.3,-h*0.2,aw*0.55,-h*0.15);
+    c.bezierCurveTo(aw*0.9,-h*0.05,aw*0.8,h*0.08,0,h*0.22);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'circle') {
+    c.beginPath(); c.arc(0,0,size*0.4,0,Math.PI*2); c.fill();
+  } else if (shapeType === 'diamond') {
+    const dw=size*0.4;
+    c.beginPath();
+    c.moveTo(0,-size*0.5);
+    c.lineTo(dw,0);
+    c.lineTo(0,size*0.5);
+    c.lineTo(-dw,0);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'triangle') {
+    const tw=size*0.42;
+    c.beginPath();
+    c.moveTo(0,-size*0.55);
+    c.lineTo(tw,size*0.45);
+    c.lineTo(-tw,size*0.45);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'hexagon') {
+    const hx=size*0.36;
+    c.beginPath();
+    for (let i=0;i<6;i++) {
+      const a2=i/6*Math.PI*2-Math.PI/2;
+      i===0?c.moveTo(Math.cos(a2)*hx,Math.sin(a2)*hx):c.lineTo(Math.cos(a2)*hx,Math.sin(a2)*hx);
+    }
+    c.closePath(); c.fill();
+  }
+  c.restore();
+}
+
+function drawFrame(c, px, py, pw, ph, frameType, bgCol) {
+  if (frameType === 'none') return;
+  c.strokeStyle = bgCol;
+  if (frameType === 'thin') {
+    c.globalAlpha = 0.5; c.lineWidth = 1.5;
+    c.beginPath(); c.roundRect(px+3,py+3,pw-6,ph-6,2); c.stroke();
+  } else if (frameType === 'inset') {
+    c.globalAlpha = 0.4; c.lineWidth = 1;
+    c.beginPath(); c.roundRect(px+5,py+5,pw-10,ph-10,2); c.stroke();
+    c.globalAlpha = 0.2; c.lineWidth = 0.5;
+    c.beginPath(); c.roundRect(px+8,py+8,pw-16,ph-16,1); c.stroke();
+  } else if (frameType === 'double') {
+    c.globalAlpha = 0.55; c.lineWidth = 1;
+    c.beginPath(); c.roundRect(px+3,py+3,pw-6,ph-6,2); c.stroke();
+    c.globalAlpha = 0.3; c.lineWidth = 0.5;
+    c.beginPath(); c.roundRect(px+7,py+7,pw-14,ph-14,1); c.stroke();
+  }
+  c.globalAlpha = 1;
+}
+
+function drawLeavesInPanel(c, cx, cy, pw, ph, sz, lcount, cellIdx, t, modeType) {
+  const leaves = scatterSeeds[cellIdx] || [];
+  if (modeType === 'scatter') {
+    leaves.forEach((l, i) => {
+      const sway = Math.sin(t*0.7+cellIdx*0.9+i)*0.035;
+      drawShape(c, cx+l.ox*pw, cy+l.oy*ph, sz*l.sizeScale, l.baseAngle+sway, shape);
+    });
+  } else if (modeType === 'grid') {
+    const cols2=lcount<=2?2:3, rows2=lcount<=3?1:2;
+    for (let i=0;i<lcount;i++) {
+      const gc=i%cols2, gr=Math.floor(i/cols2);
+      const sway=Math.sin(t*0.6+cellIdx+i*1.1)*0.03;
+      drawShape(c, cx+(gc-(cols2-1)/2)*pw*0.38, cy+(gr-(rows2-1)/2)*ph*0.38, sz*0.82, -Math.PI/2+sway, shape);
+    }
+  } else if (modeType === 'radial') {
+    for (let i=0;i<lcount;i++) {
+      const baseA=(i/lcount)*Math.PI*2-Math.PI/2;
+      const sway=Math.sin(t*0.5+cellIdx*0.7+i)*0.03;
+      drawShape(c, cx+Math.cos(baseA)*sz*0.28, cy+Math.sin(baseA)*sz*0.28, sz*0.78, baseA+sway, shape);
+    }
+  } else if (modeType === 'wave') {
+    for (let i=0;i<lcount;i++) {
+      const frac=lcount===1?.5:i/(lcount-1);
+      const xOff=(frac-0.5)*pw*0.8;
+      const yOff=Math.sin(frac*Math.PI*3+cellIdx*0.5)*ph*0.3;
+      const sway=Math.sin(t*0.5+cellIdx*0.6+frac*2)*0.04;
+      drawShape(c,cx+xOff,cy+yOff,sz*0.85,-Math.PI/2+Math.sin(frac*Math.PI*2)*0.3+sway,shape);
+    }
+  } else if (modeType === 'spiral') {
+    for (let i=0;i<lcount;i++) {
+      const angle=(i/lcount)*Math.PI*2+cellIdx*0.5;
+      const radius=(i/lcount)*Math.min(pw,ph)*0.4;
+      const sway=Math.sin(t*0.4+cellIdx*0.8+i)*0.03;
+      drawShape(c,cx+Math.cos(angle)*radius,cy+Math.sin(angle)*radius,sz*0.8,angle+Math.PI/2+sway,shape);
+    }
+  } else if (modeType === 'diagonal') {
+    for (let i=0;i<lcount;i++) {
+      const frac=(i+0.5)/lcount;
+      const xOff=(frac-0.5)*pw*0.7;
+      const yOff=(frac-0.5)*ph*0.7;
+      const sway=Math.sin(t*0.5+cellIdx+i)*0.04;
+      drawShape(c,cx+xOff,cy+yOff,sz*0.85,-Math.PI/4+(frac-0.5)*0.6+sway,shape);
+    }
+  } else {
+    for (let i=0;i<lcount;i++) {
+      const frac=lcount===1?.5:i/(lcount-1);
+      const wave=Math.sin(t*0.5+cellIdx*0.6+frac*Math.PI)*0.18;
+      drawShape(c, cx+(frac-.5)*pw*.55, cy+Math.sin(frac*Math.PI+cellIdx)*ph*.18, sz*.85, -Math.PI/2+wave+(frac-.5)*.5, shape);
+    }
+  }
+}
+
+function renderToContext(c, W, H) {
+  const numCols=Math.round(gv('cols')), numRows=Math.round(gv('rows'));
+  const sz=gv('sz'), lcount=Math.round(gv('lcount')), gap=gv('gap');
+  const offsetRows=document.getElementById('offset').checked;
+  const p=PALETTES[pal];
+  const cellW=W/numCols, cellH=H/numRows;
+  c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+  for (let r=0;r<numRows;r++) {
+    for (let col=0;col<numCols;col++) {
+      const offX=offsetRows&&r%2===1?cellW*0.5:0;
+      const cx=col*cellW+cellW*0.5+offX, cy=r*cellH+cellH*0.5;
+      const pw=cellW-gap, ph=cellH-gap, px=cx-pw/2, py=cy-ph/2;
+      const cellIdx=r*numCols+col;
+      c.fillStyle=p.fg; c.beginPath(); c.roundRect(px,py,pw,ph,3); c.fill();
+      c.save(); c.beginPath(); c.roundRect(px,py,pw,ph,3); c.clip();
+      c.fillStyle=p.bg;
+      drawLeavesInPanel(c,cx,cy,pw,ph,sz,lcount,cellIdx,animT,mode);
+      c.restore();
+      drawFrame(c,px,py,pw,ph,frame,p.bg);
+    }
+  }
+}
+
+function draw() {
+  animT += 0.014;
+  renderToContext(ctx, cvs.width, cvs.height);
+  requestAnimationFrame(draw);
+}
+draw();
+
+function exportPNG() {
+  const exp=document.createElement('canvas');
+  exp.width=2400; exp.height=Math.round(2400*cvs.height/cvs.width);
+  const ec=exp.getContext('2d');
+  ec.scale(exp.width/cvs.width, exp.height/cvs.height);
+  renderToContext(ec, cvs.width, cvs.height);
+  exp.toBlob(blob => {
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='palm-baffle-pattern.png';
+    a.click();
+  });
+}
+
+function exportSVGFile() {
+  const W=cvs.width, H=cvs.height;
+  const numCols=Math.round(gv('cols')), numRows=Math.round(gv('rows'));
+  const sz=gv('sz'), lcount=Math.round(gv('lcount')), gap=gv('gap');
+  const offsetRows=document.getElementById('offset').checked;
+  const p=PALETTES[pal];
+  const cellW=W/numCols, cellH=H/numRows;
+
+  function leafD(cx,cy,size,angle,shapeType) {
+    const cos=Math.cos(angle),sin=Math.sin(angle);
+    function pt(lx,ly){return{x:cx+lx*cos-ly*sin,y:cy+lx*sin+ly*cos};}
+    const w=size*0.36,h=size;
+    if (shapeType==='palm'||shapeType==='needle') {
+      const nw=shapeType==='needle'?size*0.14:w;
+      const a=pt(0,h*.2),b1=pt(-nw*.9,h*.05),b2=pt(-nw,-h*.32),tip=pt(0,-h*.85),c1=pt(nw,-h*.32),c2=pt(nw*.9,h*.05);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${tip.x},${tip.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='banana') {
+      const bw=size*.48,bh=size;
+      const a=pt(0,bh*.22),b1=pt(-bw*.6,bh*.1),b2=pt(-bw*.9,-bh*.1),b3=pt(-bw*.3,-bh*.85),c1=pt(-bw*.05,-bh*.95),c2=pt(bw*.15,-bh*.9),c3=pt(bw*.4,-bh*.75),d1=pt(bw*.85,-bh*.1),d2=pt(bw*.55,bh*.1);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='willow') {
+      const nw=size*0.25;
+      const a=pt(0,h*0.2),b1=pt(-nw*0.5,h*0.05),b2=pt(-nw*0.6,-h*0.3),b3=pt(-nw*0.12,-h*0.92),c1=pt(-nw*0.04,-h*0.97),c2=pt(nw*0.04,-h*0.97),c3=pt(nw*0.12,-h*0.92),d1=pt(nw*0.6,-h*0.3),d2=pt(nw*0.5,h*0.05);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='oak') {
+      const ow=size*0.44;
+      const a=pt(0,h*0.15),b1=pt(ow*0.7,h*0.05),b2=pt(ow,-h*0.1),b3=pt(ow*0.45,-h*0.25),c1=pt(ow*1.1,-h*0.25),c2=pt(ow*1.1,-h*0.5),c3=pt(ow*0.45,-h*0.55),d1=pt(ow*0.8,-h*0.65),d2=pt(ow*0.6,-h*0.85),tip=pt(0,-h*0.88),e1=pt(-ow*0.6,-h*0.85),e2=pt(-ow*0.8,-h*0.65),e3=pt(-ow*0.45,-h*0.55),f1=pt(-ow*1.1,-h*0.5),f2=pt(-ow*1.1,-h*0.25),f3=pt(-ow*0.45,-h*0.25),g1=pt(-ow,-h*0.1),g2=pt(-ow*0.7,h*0.05);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${tip.x},${tip.y} C${e1.x},${e1.y} ${e2.x},${e2.y} ${e3.x},${e3.y} C${f1.x},${f1.y} ${f2.x},${f2.y} ${f3.x},${f3.y} C${g1.x},${g1.y} ${g2.x},${g2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='maple') {
+      const mw=size*0.38;
+      const a=pt(0,h*0.2),b1=pt(mw*0.3,0),b2=pt(mw*0.3,-h*0.1),b3=pt(mw*0.6,-h*0.15),c1=pt(mw*0.35,-h*0.2),c2=pt(mw*0.4,-h*0.3),c3=pt(mw*0.6,-h*0.4),d1=pt(mw*0.35,-h*0.42),d2=pt(mw*0.3,-h*0.52),d3=pt(mw*0.3,-h*0.6),e1=pt(mw*0.2,-h*0.75),e2=pt(mw*0.1,-h*0.88),tip=pt(0,-h*0.92),f1=pt(-mw*0.1,-h*0.88),f2=pt(-mw*0.2,-h*0.75),f3=pt(-mw*0.3,-h*0.6),g1=pt(-mw*0.3,-h*0.52),g2=pt(-mw*0.35,-h*0.42),g3=pt(-mw*0.6,-h*0.4),h1=pt(-mw*0.4,-h*0.3),h2=pt(-mw*0.35,-h*0.2),h3=pt(-mw*0.6,-h*0.15),i1=pt(-mw*0.3,-h*0.1),i2=pt(-mw*0.3,0);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${d3.x},${d3.y} C${e1.x},${e1.y} ${e2.x},${e2.y} ${tip.x},${tip.y} C${f1.x},${f1.y} ${f2.x},${f2.y} ${f3.x},${f3.y} C${g1.x},${g1.y} ${g2.x},${g2.y} ${g3.x},${g3.y} C${h1.x},${h1.y} ${h2.x},${h2.y} ${h3.x},${h3.y} C${i1.x},${i1.y} ${i2.x},${i2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='fern') {
+      const fw=size*0.28;
+      const s1=pt(0,h*0.2),s2=pt(-fw*0.15,h*0.05),s3=pt(-fw*0.1,-h*0.4),s4=pt(0,-h*0.92),s5=pt(fw*0.1,-h*0.4),s6=pt(fw*0.15,h*0.05);
+      let d=`M${s1.x},${s1.y} C${s2.x},${s2.y} ${s3.x},${s3.y} ${s4.x},${s4.y} C${s5.x},${s5.y} ${s6.x},${s6.y} ${s1.x},${s1.y} Z`;
+      for (let i=0;i<5;i++) {
+        const frac=(i+0.5)/5;
+        const y=h*0.15-frac*h*0.95;
+        const lw=fw*(0.6+frac*0.6);
+        const l1=pt(0,y),l2=pt(-lw*0.4,y-h*0.05),l3=pt(-lw*0.85,y-h*0.03),l4=pt(-lw*0.9,y),l5=pt(-lw*0.85,y+h*0.03),l6=pt(-lw*0.4,y+h*0.05);
+        d+=` M${l1.x},${l1.y} C${l2.x},${l2.y} ${l3.x},${l3.y} ${l4.x},${l4.y} C${l5.x},${l5.y} ${l6.x},${l6.y} ${l1.x},${l1.y} Z`;
+        const r1=pt(0,y),r2=pt(lw*0.4,y-h*0.05),r3=pt(lw*0.85,y-h*0.03),r4=pt(lw*0.9,y),r5=pt(lw*0.85,y+h*0.03),r6=pt(lw*0.4,y+h*0.05);
+        d+=` M${r1.x},${r1.y} C${r2.x},${r2.y} ${r3.x},${r3.y} ${r4.x},${r4.y} C${r5.x},${r5.y} ${r6.x},${r6.y} ${r1.x},${r1.y} Z`;
+      }
+      return d;
+    } else if (shapeType==='aloe') {
+      const aw=size*0.32;
+      const a=pt(0,h*0.2),b1=pt(-aw*0.9,h*0.08),b2=pt(-aw*0.7,-h*0.3),b3=pt(-aw*0.1,-h*0.92),c1=pt(-aw*0.03,-h*0.97),c2=pt(aw*0.03,-h*0.97),c3=pt(aw*0.1,-h*0.92),d1=pt(aw*0.7,-h*0.3),d2=pt(aw*0.9,h*0.08);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='hemp') {
+      const hw=size*0.44;
+      function rotPt(lx,ly,rot){const rc=Math.cos(rot),rs=Math.sin(rot);return pt(lx*rc-ly*rs,lx*rs+ly*rc);}
+      const s1=rotPt(0,h*0.2,0),s2=rotPt(-hw*0.08,h*0.05,0),s3=rotPt(-hw*0.05,-h*0.1,0),s4=rotPt(0,-h*0.3,0),s5=rotPt(hw*0.05,-h*0.1,0),s6=rotPt(hw*0.08,h*0.05,0);
+      let d=`M${s1.x},${s1.y} C${s2.x},${s2.y} ${s3.x},${s3.y} ${s4.x},${s4.y} C${s5.x},${s5.y} ${s6.x},${s6.y} ${s1.x},${s1.y} Z`;
+      for (let i=0;i<5;i++) {
+        const ang=(i-2)*0.35,oy=-h*0.3,lh2=h*0.45,lw2=hw*0.12;
+        const j1=rotPt(0,oy,ang),j2=rotPt(-lw2,oy-h*0.02,ang),j3=rotPt(-lw2*0.6,oy-h*0.2,ang),j4=rotPt(0,oy-lh2,ang),j5=rotPt(lw2*0.6,oy-h*0.2,ang),j6=rotPt(lw2,oy-h*0.02,ang);
+        d+=` M${j1.x},${j1.y} C${j2.x},${j2.y} ${j3.x},${j3.y} ${j4.x},${j4.y} C${j5.x},${j5.y} ${j6.x},${j6.y} ${j1.x},${j1.y} Z`;
+      }
+      return d;
+    } else if (shapeType==='arrow') {
+      const aw=size*0.44;
+      const a=pt(0,h*0.22),b1=pt(-aw*0.8,h*0.08),b2=pt(-aw*0.9,-h*0.05),b3=pt(-aw*0.55,-h*0.15),c1=pt(-aw*0.3,-h*0.2),c2=pt(-aw*0.2,-h*0.25),c3=pt(-aw*0.12,-h*0.35),d1=pt(-aw*0.08,-h*0.6),d2=pt(-aw*0.04,-h*0.78),tip=pt(0,-h*0.9),e1=pt(aw*0.04,-h*0.78),e2=pt(aw*0.08,-h*0.6),e3=pt(aw*0.12,-h*0.35),f1=pt(aw*0.2,-h*0.25),f2=pt(aw*0.3,-h*0.2),f3=pt(aw*0.55,-h*0.15),g1=pt(aw*0.9,-h*0.05),g2=pt(aw*0.8,h*0.08);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${tip.x},${tip.y} C${e1.x},${e1.y} ${e2.x},${e2.y} ${e3.x},${e3.y} C${f1.x},${f1.y} ${f2.x},${f2.y} ${f3.x},${f3.y} C${g1.x},${g1.y} ${g2.x},${g2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='circle') {
+      const r=size*0.4,cpx=r*0.552;
+      const a=pt(0,-r),b1=pt(cpx,-r),b2=pt(r,-cpx),b3=pt(r,0),c1=pt(r,cpx),c2=pt(cpx,r),c3=pt(0,r),d1=pt(-cpx,r),d2=pt(-r,cpx),d3=pt(-r,0),e1=pt(-r,-cpx),e2=pt(-cpx,-r);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${d3.x},${d3.y} C${e1.x},${e1.y} ${e2.x},${e2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='diamond') {
+      const dw=size*0.4;
+      const a=pt(0,-size*0.5),b=pt(dw,0),c=pt(0,size*0.5),d=pt(-dw,0);
+      return `M${a.x},${a.y} L${b.x},${b.y} L${c.x},${c.y} L${d.x},${d.y} Z`;
+    } else if (shapeType==='triangle') {
+      const tw=size*0.42;
+      const a=pt(0,-size*0.55),b=pt(tw,size*0.45),c=pt(-tw,size*0.45);
+      return `M${a.x},${a.y} L${b.x},${b.y} L${c.x},${c.y} Z`;
+    } else if (shapeType==='hexagon') {
+      const hx=size*0.36;
+      let d='';
+      for(let i=0;i<6;i++){const a2=i/6*Math.PI*2-Math.PI/2;const pp=pt(Math.cos(a2)*hx,Math.sin(a2)*hx);d+=(i===0?'M':'L')+`${pp.x},${pp.y}`;}
+      return d+' Z';
+    } else {
+      const mw=size*.44,mh=size;
+      const a=pt(0,mh*.22),b1=pt(-mw,mh*.05),b2=pt(-mw*1.1,-mh*.3),b3=pt(-mw*.5,-mh*.85),c1=pt(-mw*.1,-mh*.98),c2=pt(mw*.1,-mh*.98),c3=pt(mw*.5,-mh*.85),d1=pt(mw*1.1,-mh*.3),d2=pt(mw,mh*.05);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${a.x},${a.y} Z`;
+    }
+  }
+
+  let s=[`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
+    `<rect width="${W}" height="${H}" fill="${p.bg}"/>`];
+
+  for (let r=0;r<numRows;r++) {
+    for (let col=0;col<numCols;col++) {
+      const offX=offsetRows&&r%2===1?cellW*.5:0;
+      const cx=col*cellW+cellW*.5+offX, cy=r*cellH+cellH*.5;
+      const pw=cellW-gap, ph=cellH-gap, px=cx-pw/2, py=cy-ph/2;
+      const cellIdx=r*numCols+col;
+      const cid=`cl${cellIdx}`;
+      s.push(`<rect x="${px.toFixed(1)}" y="${py.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" rx="3" fill="${p.fg}"/>`);
+      s.push(`<clipPath id="${cid}"><rect x="${px.toFixed(1)}" y="${py.toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" rx="3"/></clipPath>`);
+      s.push(`<g clip-path="url(#${cid})">`);
+      const leaves=scatterSeeds[cellIdx]||[];
+      const addL=(lx,ly,lsz,ang)=>s.push(`<path d="${leafD(lx,ly,lsz,ang,shape)}" fill="${p.bg}"/>`);
+      if (mode==='scatter') leaves.forEach(l=>addL(cx+l.ox*pw,cy+l.oy*ph,sz*l.sizeScale,l.baseAngle));
+      else if (mode==='grid') { const c2=lcount<=2?2:3,r2=lcount<=3?1:2; for(let i=0;i<lcount;i++){const gc=i%c2,gr=Math.floor(i/c2);addL(cx+(gc-(c2-1)/2)*pw*.38,cy+(gr-(r2-1)/2)*ph*.38,sz*.82,-Math.PI/2);} }
+      else if (mode==='radial') { for(let i=0;i<lcount;i++){const a=(i/lcount)*Math.PI*2-Math.PI/2;addL(cx+Math.cos(a)*sz*.28,cy+Math.sin(a)*sz*.28,sz*.78,a);} }
+      else if (mode==='wave') { for(let i=0;i<lcount;i++){const frac=lcount===1?.5:i/(lcount-1);addL(cx+(frac-.5)*pw*.8,cy+Math.sin(frac*Math.PI*3+cellIdx*.5)*ph*.3,sz*.85,-Math.PI/2+Math.sin(frac*Math.PI*2)*.3);} }
+      else if (mode==='spiral') { for(let i=0;i<lcount;i++){const a=(i/lcount)*Math.PI*2+cellIdx*.5,r=(i/lcount)*Math.min(pw,ph)*.4;addL(cx+Math.cos(a)*r,cy+Math.sin(a)*r,sz*.8,a+Math.PI/2);} }
+      else if (mode==='diagonal') { for(let i=0;i<lcount;i++){const frac=(i+.5)/lcount;addL(cx+(frac-.5)*pw*.7,cy+(frac-.5)*ph*.7,sz*.85,-Math.PI/4+(frac-.5)*.6);} }
+      else { for(let i=0;i<lcount;i++){const frac=lcount===1?.5:i/(lcount-1);addL(cx+(frac-.5)*pw*.55,cy+Math.sin(frac*Math.PI+cellIdx)*ph*.18,sz*.85,-Math.PI/2+(frac-.5)*.5);} }
+      if (frame!=='none') {
+        const i1=frame==='double'?3:5,i2=frame==='double'?7:8,op=frame==='thin'?.5:.4;
+        s.push(`<rect x="${(px+i1).toFixed(1)}" y="${(py+i1).toFixed(1)}" width="${(pw-i1*2).toFixed(1)}" height="${(ph-i1*2).toFixed(1)}" rx="2" fill="none" stroke="${p.bg}" stroke-width="1" opacity="${op}"/>`);
+        if (frame!=='thin') s.push(`<rect x="${(px+i2).toFixed(1)}" y="${(py+i2).toFixed(1)}" width="${(pw-i2*2).toFixed(1)}" height="${(ph-i2*2).toFixed(1)}" rx="1" fill="none" stroke="${p.bg}" stroke-width="0.5" opacity="0.25"/>`);
+      }
+      s.push(`</g>`);
+    }
+  }
+  s.push('</svg>');
+  const blob=new Blob([s.join('\n')],{type:'image/svg+xml'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='palm-baffle-pattern.svg'; a.click();
+}
+
+function randomize() {
+  [['cols',2,8,1],['rows',1,6,1],['sz',20,85,1],['lcount',2,4,1],['gap',2,28,1]].forEach(([id,mn,mx,step])=>{
+    const v=Math.round((Math.random()*(mx-mn)+mn)/step)*step;
+    document.getElementById(id).value=v; document.getElementById(id+'V').textContent=v;
+  });
+  pal=Math.floor(Math.random()*PALETTES.length);
+  const modes=['scatter','grid','radial','flow','wave','spiral','diagonal'],shapes=['palm','banana','monstera','needle','oak','maple','fern','willow','aloe','hemp','arrow','circle','diamond','triangle','hexagon'],frames=['none','thin','inset','double'];
+  mode=modes[Math.floor(Math.random()*modes.length)];
+  shape=shapes[Math.floor(Math.random()*shapes.length)];
+  frame=frames[Math.floor(Math.random()*frames.length)];
+  document.getElementById('modes').querySelectorAll('.pill').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+  document.getElementById('shapes').querySelectorAll('.pill').forEach(b=>b.classList.toggle('on',b.dataset.shape===shape));
+  document.getElementById('frames').querySelectorAll('.pill').forEach(b=>b.classList.toggle('on',b.dataset.frame===frame));
+  buildSwatches(); rebuildSeeds();
+}
+</script>
+</body>
+</html>
