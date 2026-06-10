@@ -190,11 +190,11 @@ function render(config) {
 }
 
 const renders = [
-  { cols:6, rows:3, sz:38, gap:10, offsetRows:false, lcount:3, mode:'scatter',  shape:'star',     frame:'none',   paletteIdx:0,  file:'render-1.svg' },
-  { cols:5, rows:4, sz:32, gap:8,  offsetRows:true,  lcount:4, mode:'radial',   shape:'monstera', frame:'thin',   paletteIdx:4,  file:'render-2.svg' },
-  { cols:7, rows:3, sz:42, gap:14, offsetRows:false, lcount:2, mode:'diagonal', shape:'crescent', frame:'inset',  paletteIdx:7,  file:'render-3.svg' },
-  { cols:4, rows:4, sz:34, gap:7,  offsetRows:true,  lcount:3, mode:'spiral',   shape:'heart',    frame:'double', paletteIdx:2,  file:'render-4.svg' },
-  { cols:6, rows:3, sz:40, gap:12, offsetRows:false, lcount:2, mode:'wave',     shape:'oak',      frame:'none',   paletteIdx:11, file:'render-5.svg' },
+  { cols:4, rows:3, sz:36, gap:8,  offsetRows:true,  lcount:4, mode:'radial',   shape:'fern',     frame:'thin',   paletteIdx:8,  file:'render-fern-radial.svg' },
+  { cols:5, rows:3, sz:34, gap:10, offsetRows:false, lcount:3, mode:'diagonal', shape:'oak',      frame:'none',   paletteIdx:4,  file:'render-oak-diagonal.svg' },
+  { cols:6, rows:3, sz:30, gap:7,  offsetRows:false, lcount:4, mode:'wave',     shape:'willow',   frame:'inset',  paletteIdx:6,  file:'render-willow-wave.svg' },
+  { cols:5, rows:3, sz:32, gap:9,  offsetRows:true,  lcount:3, mode:'scatter',  shape:'monstera', frame:'none',   paletteIdx:11, file:'render-monstera-scatter.svg' },
+  { cols:4, rows:4, sz:38, gap:10, offsetRows:true,  lcount:3, mode:'spiral',   shape:'palm',     frame:'double', paletteIdx:7,  file:'render-palm-spiral.svg' },
 ];
 
 renders.forEach(r => {

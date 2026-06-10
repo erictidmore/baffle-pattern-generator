@@ -16,11 +16,11 @@ An interactive, single-page HTML tool for generating decorative baffle (acoustic
 
 ## Screenshots
 
-![Star — Scatter — Sage](render-star-scatter.svg)
-![Monstera — Radial — Ochre](render-monstera-radial.svg)
-![Crescent — Diagonal — Terracotta](render-crescent-diagonal.svg)
-![Heart — Spiral — Clay](render-heart-spiral.svg)
-![Oak — Wave — Charcoal](render-oak-wave.svg)
+![Fern — Radial — Dusk](render-fern-radial.svg)
+![Oak — Diagonal — Ochre](render-oak-diagonal.svg)
+![Willow — Wave — Ink](render-willow-wave.svg)
+![Monstera — Scatter — Charcoal](render-monstera-scatter.svg)
+![Palm — Spiral — Rust](render-palm-spiral.svg)
 
 ## Usage
 
