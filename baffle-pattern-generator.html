@@ -108,6 +108,14 @@
     <div class="pill" data-shape="diamond">Diamond</div>
     <div class="pill" data-shape="triangle">Triangle</div>
     <div class="pill" data-shape="hexagon">Hexagon</div>
+    <div class="pill" data-shape="star">Star</div>
+    <div class="pill" data-shape="heart">Heart</div>
+    <div class="pill" data-shape="drop">Drop</div>
+    <div class="pill" data-shape="crescent">Crescent</div>
+    <div class="pill" data-shape="cross">Cross</div>
+    <div class="pill" data-shape="spike">Spike</div>
+    <div class="pill" data-shape="ring">Ring</div>
+    <div class="pill" data-shape="petal">Petal</div>
   </div>
 
   <p class="section-label" style="margin-top:1rem">Panel frame</p>
@@ -400,6 +408,72 @@ function drawShape(c, cx, cy, size, angle, shapeType) {
       i===0?c.moveTo(Math.cos(a2)*hx,Math.sin(a2)*hx):c.lineTo(Math.cos(a2)*hx,Math.sin(a2)*hx);
     }
     c.closePath(); c.fill();
+  } else if (shapeType === 'star') {
+    const sr=size*0.48, ir=size*0.2;
+    c.beginPath();
+    for (let i=0;i<5;i++) {
+      const a1=(i*2)/5*Math.PI-Math.PI/2, a2=(i*2+1)/5*Math.PI-Math.PI/2;
+      const ox=Math.cos(a1)*sr, oy=Math.sin(a1)*sr;
+      i===0?c.moveTo(ox,oy):c.lineTo(ox,oy);
+      c.lineTo(Math.cos(a2)*ir, Math.sin(a2)*ir);
+    }
+    c.closePath(); c.fill();
+  } else if (shapeType === 'heart') {
+    const hw=size*0.4;
+    c.beginPath();
+    c.moveTo(0, size*0.1);
+    c.bezierCurveTo(-hw*1.1, -size*0.45, -hw*0.6, -size*0.65, 0, -size*0.3);
+    c.bezierCurveTo(hw*0.6, -size*0.65, hw*1.1, -size*0.45, 0, size*0.1);
+    c.lineTo(0, size*0.5);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'drop') {
+    const dw=size*0.34;
+    c.beginPath();
+    c.moveTo(0, -size*0.55);
+    c.bezierCurveTo(-dw*1.1, -size*0.1, -dw*1.1, size*0.25, 0, size*0.4);
+    c.bezierCurveTo(dw*1.1, size*0.25, dw*1.1, -size*0.1, 0, -size*0.55);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'crescent') {
+    const cw=size*0.38;
+    c.beginPath();
+    c.moveTo(0, size*0.35);
+    c.bezierCurveTo(-cw*0.8, size*0.15, -cw*0.9, -size*0.2, -cw*0.15, -size*0.55);
+    c.bezierCurveTo(cw*0.25, -size*0.75, cw*0.55, -size*0.6, cw*0.38, -size*0.45);
+    c.bezierCurveTo(cw*0.1, -size*0.3, cw*0.15, 0, 0, size*0.35);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'cross') {
+    const cw=size*0.18, cl=size*0.5;
+    c.beginPath();
+    c.moveTo(-cw, -cl); c.lineTo(cw, -cl); c.lineTo(cw, -cw);
+    c.lineTo(cl, -cw); c.lineTo(cl, cw); c.lineTo(cw, cw);
+    c.lineTo(cw, cl); c.lineTo(-cw, cl); c.lineTo(-cw, cw);
+    c.lineTo(-cl, cw); c.lineTo(-cl, -cw); c.lineTo(-cw, -cw);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'spike') {
+    const sw=size*0.3;
+    c.beginPath();
+    c.moveTo(0, size*0.4);
+    c.lineTo(-sw*0.3, -size*0.05);
+    c.lineTo(sw*0.15, -size*0.05);
+    c.lineTo(-sw*0.15, -size*0.4);
+    c.lineTo(sw*0.35, -size*0.4);
+    c.lineTo(sw*0.1, -size*0.65);
+    c.lineTo(0, -size*0.55);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'ring') {
+    const ro=size*0.38, ri=size*0.22;
+    c.beginPath();
+    c.arc(0, 0, ro, 0, Math.PI*2);
+    c.moveTo(ri, 0);
+    c.arc(0, 0, ri, 0, Math.PI*2, true);
+    c.closePath(); c.fill();
+  } else if (shapeType === 'petal') {
+    const pw=size*0.34;
+    c.beginPath();
+    c.moveTo(0, size*0.2);
+    c.bezierCurveTo(-pw, size*0.1, -pw*1.1, -size*0.4, 0, -size*0.6);
+    c.bezierCurveTo(pw*1.1, -size*0.4, pw, size*0.1, 0, size*0.2);
+    c.closePath(); c.fill();
   }
   c.restore();
 }
@@ -602,6 +676,39 @@ function exportSVGFile() {
       let d='';
       for(let i=0;i<6;i++){const a2=i/6*Math.PI*2-Math.PI/2;const pp=pt(Math.cos(a2)*hx,Math.sin(a2)*hx);d+=(i===0?'M':'L')+`${pp.x},${pp.y}`;}
       return d+' Z';
+    } else if (shapeType==='star') {
+      const sr=size*0.48,ir=size*0.2;
+      let d='';
+      for(let i=0;i<5;i++){const a1=(i*2)/5*Math.PI-Math.PI/2,a2=(i*2+1)/5*Math.PI-Math.PI/2;const o=pt(Math.cos(a1)*sr,Math.sin(a1)*sr),inn=pt(Math.cos(a2)*ir,Math.sin(a2)*ir);d+=(i===0?'M':'L')+`${o.x},${o.y} L${inn.x},${inn.y}`;}
+      return d+' Z';
+    } else if (shapeType==='heart') {
+      const hw=size*0.4;
+      const a=pt(0,size*.1),b1=pt(-hw*1.1,-size*.45),b2=pt(-hw*.6,-size*.65),b3=pt(0,-size*.3),c1=pt(hw*.6,-size*.65),c2=pt(hw*1.1,-size*.45),c3=pt(0,size*.1),c4=pt(0,size*.5);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} L${c4.x},${c4.y} Z`;
+    } else if (shapeType==='drop') {
+      const dw=size*0.34;
+      const a=pt(0,-size*.55),b1=pt(-dw*1.1,-size*.1),b2=pt(-dw*1.1,size*.25),b3=pt(0,size*.4),c1=pt(dw*1.1,size*.25),c2=pt(dw*1.1,-size*.1);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='crescent') {
+      const cw=size*0.38;
+      const a=pt(0,size*.35),b1=pt(-cw*.8,size*.15),b2=pt(-cw*.9,-size*.2),b3=pt(-cw*.15,-size*.55),c1=pt(cw*.25,-size*.75),c2=pt(cw*.55,-size*.6),c3=pt(cw*.38,-size*.45),d1=pt(cw*.1,-size*.3),d2=pt(cw*.15,0);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${a.x},${a.y} Z`;
+    } else if (shapeType==='cross') {
+      const cw=size*0.18,cl=size*0.5;
+      const a=pt(-cw,-cl),b=pt(cw,-cl),c=pt(cw,-cw),d=pt(cl,-cw),e=pt(cl,cw),f=pt(cw,cw),g=pt(cw,cl),h=pt(-cw,cl),i=pt(-cw,cw),j=pt(-cl,cw),k=pt(-cl,-cw),l=pt(-cw,-cw);
+      return `M${a.x},${a.y} L${b.x},${b.y} L${c.x},${c.y} L${d.x},${d.y} L${e.x},${e.y} L${f.x},${f.y} L${g.x},${g.y} L${h.x},${h.y} L${i.x},${i.y} L${j.x},${j.y} L${k.x},${k.y} L${l.x},${l.y} Z`;
+    } else if (shapeType==='spike') {
+      const sw=size*0.3;
+      const a=pt(0,size*.4),b=pt(-sw*.3,-size*.05),c=pt(sw*.15,-size*.05),d=pt(-sw*.15,-size*.4),e=pt(sw*.35,-size*.4),f=pt(sw*.1,-size*.65),g=pt(0,-size*.55);
+      return `M${a.x},${a.y} L${b.x},${b.y} L${c.x},${c.y} L${d.x},${d.y} L${e.x},${e.y} L${f.x},${f.y} L${g.x},${g.y} Z`;
+    } else if (shapeType==='ring') {
+      const ro=size*0.38,ri=size*0.22,cpr=ro*0.552,cpi=ri*0.552;
+      const a=pt(0,-ro),b1=pt(cpr,-ro),b2=pt(ro,-cpr),b3=pt(ro,0),c1=pt(ro,cpr),c2=pt(cpr,ro),c3=pt(0,ro),d1=pt(-cpr,ro),d2=pt(-ro,cpr),d3=pt(-ro,0),e1=pt(-ro,-cpr),e2=pt(-cpr,-ro),f=pt(ri,0),g1=pt(ri,-cpi),g2=pt(cpi,-ri),g3=pt(0,-ri),h1=pt(-cpi,-ri),h2=pt(-ri,-cpi),h3=pt(-ri,0),i1=pt(-ri,cpi),i2=pt(-cpi,ri),i3=pt(0,ri),j1=pt(cpi,ri),j2=pt(ri,cpi),j3=pt(ri,0);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${c3.x},${c3.y} C${d1.x},${d1.y} ${d2.x},${d2.y} ${d3.x},${d3.y} C${e1.x},${e1.y} ${e2.x},${e2.y} ${a.x},${a.y} Z M${f.x},${f.y} C${g1.x},${g1.y} ${g2.x},${g2.y} ${g3.x},${g3.y} C${h1.x},${h1.y} ${h2.x},${h2.y} ${h3.x},${h3.y} C${i1.x},${i1.y} ${i2.x},${i2.y} ${i3.x},${i3.y} C${j1.x},${j1.y} ${j2.x},${j2.y} ${j3.x},${j3.y} Z`;
+    } else if (shapeType==='petal') {
+      const pw=size*0.34;
+      const a=pt(0,size*.2),b1=pt(-pw,size*.1),b2=pt(-pw*1.1,-size*.4),b3=pt(0,-size*.6),c1=pt(pw*1.1,-size*.4),c2=pt(pw,size*.1);
+      return `M${a.x},${a.y} C${b1.x},${b1.y} ${b2.x},${b2.y} ${b3.x},${b3.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${a.x},${a.y} Z`;
     } else {
       const mw=size*.44,mh=size;
       const a=pt(0,mh*.22),b1=pt(-mw,mh*.05),b2=pt(-mw*1.1,-mh*.3),b3=pt(-mw*.5,-mh*.85),c1=pt(-mw*.1,-mh*.98),c2=pt(mw*.1,-mh*.98),c3=pt(mw*.5,-mh*.85),d1=pt(mw*1.1,-mh*.3),d2=pt(mw,mh*.05);
@@ -655,7 +762,7 @@ function randomize() {
     document.getElementById(id).value=v; document.getElementById(id+'V').textContent=v;
   });
   pal=Math.floor(Math.random()*PALETTES.length);
-  const modes=['scatter','grid','radial','flow','wave','spiral','diagonal'],shapes=['palm','banana','monstera','needle','oak','maple','fern','willow','aloe','hemp','arrow','circle','diamond','triangle','hexagon'],frames=['none','thin','inset','double'];
+  const modes=['scatter','grid','radial','flow','wave','spiral','diagonal'],shapes=['palm','banana','monstera','needle','oak','maple','fern','willow','aloe','hemp','arrow','circle','diamond','triangle','hexagon','star','heart','drop','crescent','cross','spike','ring','petal'],frames=['none','thin','inset','double'];
   mode=modes[Math.floor(Math.random()*modes.length)];
   shape=shapes[Math.floor(Math.random()*shapes.length)];
   frame=frames[Math.floor(Math.random()*frames.length)];
