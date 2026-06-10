@@ -4,7 +4,7 @@ An interactive, single-page HTML tool for generating decorative baffle (acoustic
 
 ## Features
 
-- **15 leaf shapes** — Palm, Banana, Monstera, Needle, Oak, Maple, Fern, Willow, Aloe, Hemp, Arrow, Circle, Diamond, Triangle, Hexagon
+- **23 leaf shapes** — Palm, Banana, Monstera, Needle, Oak, Maple, Fern, Willow, Aloe, Hemp, Arrow, Circle, Diamond, Triangle, Hexagon, Star, Heart, Drop, Crescent, Cross, Spike, Ring, Petal
 - **7 layout modes** — Random Scatter, Grid Repeat, Radial Rosette, Flowing Rows, Wave, Spiral, Diagonal
 - **16 color palettes** — Sage, Onyx, Clay, Slate, Ochre, Ash, Ink, Rust, Dusk, Fern, Sand, Charcoal, Teal, Terracotta, Stone, Midnight
 - **Panel frame styles** — None, Thin Border, Inset Groove, Double Rule
@@ -16,9 +16,11 @@ An interactive, single-page HTML tool for generating decorative baffle (acoustic
 
 ## Screenshots
 
-| Scatter mode — Palm leaves | Radial mode — Maple leaves | Wave mode — Fern leaves |
-|---|---|---|
-| ![Scatter Palm](palm-baffle-pattern%202.png) | ![Radial Maple](palm-baffle-pattern%203.png) | ![Wave Fern](palm-baffle-pattern%204.png) |
+![Star — Scatter — Sage](render-star-scatter.svg)
+![Monstera — Radial — Ochre](render-monstera-radial.svg)
+![Crescent — Diagonal — Terracotta](render-crescent-diagonal.svg)
+![Heart — Spiral — Clay](render-heart-spiral.svg)
+![Oak — Wave — Charcoal](render-oak-wave.svg)
 
 ## Usage
 
